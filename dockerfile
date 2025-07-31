@@ -28,6 +28,16 @@ RUN apt-get install libjpeg8-dev -y \
 RUN apt-get install xdg-user-dirs -y \
 && apt-get install xdg-utils -y
 
+# Install ffmpeg with x264 support
+RUN apt-get install ffmpeg -y \
+&& apt-get install libx264-dev -y \
+&& apt-get install x264 -y
+
+# Install sudo and add carla user to sudo group
+RUN apt-get install sudo -y \
+&& usermod -aG sudo carla \
+&& echo "carla ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
 WORKDIR /home/carla
 RUN wget "https://github.com/carla-simulator/scenario_runner/archive/refs/tags/v0.9.12.tar.gz"
 RUN tar -xf v0.9.12.tar.gz 
