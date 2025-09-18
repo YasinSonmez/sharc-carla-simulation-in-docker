@@ -1,87 +1,127 @@
-# CARLA Docker Scripts
+# CARLA Simulation Pipeline in Docker
 
-Organized scripts for recording and playing back CARLA simulations in headless environments.
+Automated CARLA simulation recording and playback pipeline designed for headless environments using Docker/Apptainer containers.
 
-## Folder Structure
+## Overview
+
+This project provides a complete pipeline for:
+- Recording CARLA simulations to log files
+- Replaying simulations from logs and capturing frames
+- Generating videos from captured frames
+
+## Project Structure
 
 ```
-carla_docker/
+sharc-carla-simulation-in-docker/
 ├── src/
-│   ├── recording/          # Scripts for recording data
-│   │   ├── record_images.py       # Record camera images directly
-│   │   └── record_replay_logs.py  # Record/manage CARLA log files
-│   ├── playback/           # Scripts for replaying recordings
-│   │   └── replay_with_sensors.py # Replay logs with visual/data extraction
+│   ├── recording/          # Recording scripts
+│   │   ├── record_images.py       # Direct camera recording
+│   │   └── record_replay_logs.py  # CARLA log file recording
+│   ├── playback/           # Playback and capture scripts
+│   │   └── replay_with_sensors.py # Multi-mode replay with sensors
 │   └── utils/              # Utility scripts
-│       └── ffmpeg_video.py        # Convert image sequences to videos
-├── data/                   # Output data storage
-│   ├── recordings/         # CARLA log files (.log)
-│   ├── images/            # Captured image sequences
-│   └── videos/            # Generated video files
-└── dockerfile              # Docker configuration
+│       └── ffmpeg_video.py        # Video generation from frames
+├── dockerfile              # CARLA 0.9.12 with dependencies
+├── run_carla_pipeline.sh   # Main pipeline script
+├── carla_internal_pipeline.sh # Internal container pipeline
+└── data/                   # Output directories (auto-created)
+    ├── recordings/         # CARLA log files (.log)
+    ├── images/            # Captured image sequences
+    └── videos/            # Generated video files
 ```
 
 ## Quick Start
 
-### 1. Record a simulation log
+### Option 1: Complete Automated Pipeline (Recommended)
 
-**With Apptainer/Singularity:**
+Run the entire pipeline with a single command:
+
 ```bash
-apptainer run --nv -e -B $PWD:/workspace carla915.sif python3 /workspace/src/recording/record_replay_logs.py record --duration 30 --file /workspace/data/recordings/my_recording.log
+./run_carla_pipeline.sh
 ```
 
-**Direct Python:**
+This will:
+1. Start CARLA server in headless mode
+2. Record a 30-second simulation
+3. Replay and capture frames (follow mode)
+4. Generate an MP4 video
+5. Clean up automatically
+
+### Option 2: Manual Step-by-Step
+
+**1. Record a simulation:**
 ```bash
+# Using Apptainer/Singularity
+apptainer run --nv -e -B $PWD:/workspace carla912.sif python3 /workspace/src/recording/record_replay_logs.py record --duration 30 --file /workspace/data/recordings/my_recording.log
+
+# Or directly with Python (requires CARLA server running)
 cd src/recording
 python record_replay_logs.py record --duration 30 --file ../../data/recordings/my_recording.log
 ```
 
-### 2. Replay and capture visuals
+**2. Replay and capture:**
 ```bash
-cd ../playback
-python replay_with_sensors.py camera --file ../../data/recordings/my_recording.log --output ../../data/images/replay_frames
+cd src/playback
+python replay_with_sensors.py follow --file ../../data/recordings/my_recording.log --output ../../data/images/follow --duration 30 --sync
 ```
 
-### 3. Create video from images
+**3. Generate video:**
 ```bash
-cd ../utils
+cd src/utils
 python ffmpeg_video.py
 ```
 
-## Recording Options
+## Configuration
 
-**Direct image recording:**
+### Pipeline Script Configuration
+
+Edit `run_carla_pipeline.sh` to customize:
+
+```bash
+CARLA_CONTAINER="carla912.sif"    # Container name
+CARLA_PORT=2000                   # CARLA server port
+RECORDING_DURATION=30             # Recording duration (seconds)
+RECORDING_FILE="data/recordings/test.log"  # Output log file
+OUTPUT_DIR="data/images/test"    # Image output directory
+REPLAY_MODE="follow"              # Options: follow, camera, data
+```
+
+### Recording Modes
+
+**Direct Image Recording:**
 ```bash
 cd src/recording
-python record_images.py  # Uses config in file
+python record_images.py  # Uses built-in configuration
 ```
 
-**Log-based recording:**
+**Log-based Recording:**
 ```bash
 python record_replay_logs.py record --duration 20 --file ../../data/recordings/simulation.log
-python record_replay_logs.py info --file ../../data/recordings/simulation.log  # View log info
+python record_replay_logs.py info --file ../../data/recordings/simulation.log  # View log details
 ```
 
-## Playback Options
+## Docker Setup
 
-**Spectator camera view:**
-```bash
-cd src/playback
-python replay_with_sensors.py camera --file ../../data/recordings/recording.log --output ../../data/images/spectator
-```
+### Building the Container
 
-**Vehicle data extraction:**
-```bash
-python replay_with_sensors.py data --file ../../data/recordings/recording.log
-```
+The `dockerfile` creates a CARLA 0.9.12 environment with:
+- CARLA 0.9.12 base image
+- Python 3.7 with required packages
+- OpenCV, NumPy, Pandas, Matplotlib
+- FFmpeg with H.264 support
+- Scenario Runner integration
 
-**Follow vehicle camera:**
-```bash
-python replay_with_sensors.py follow --file ../../data/recordings/recording.log
-```
 
-## Requirements
+## Output Files
 
-- CARLA server running on localhost:2000
-- Python with carla, opencv-python packages
-- FFmpeg for video creation (optional) 
+- **Log Files:** `.log` files containing complete simulation data
+- **Images:** `frame_XXXXXX.jpg` sequences (800x600, 20 FPS)
+- **Videos:** `.mp4` files with H.264 encoding
+- **Data:** Vehicle position/velocity data in text format
+
+## Troubleshooting
+
+**CARLA Server Issues:**
+- Ensure port 2000 is available
+- Check NVIDIA driver compatibility
+- Verify container has GPU access (`--nv` flag)

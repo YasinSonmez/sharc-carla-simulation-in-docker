@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # === Configuration Parameters ===
-CARLA_CONTAINER="carla915.sif"
+CARLA_CONTAINER="carla912.sif"
 CARLA_PORT=2000
 RECORDING_DURATION=30
-RECORDING_FILE="data/recordings/test9.log"
-OUTPUT_DIR="data/images/test9"
+RECORDING_FILE="data/recordings/test.log"
+OUTPUT_DIR="data/images/test"
 REPLAY_MODE="follow"  # Options: follow, camera, data
 
 module load ffmpeg
