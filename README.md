@@ -111,6 +111,40 @@ The `dockerfile` creates a CARLA 0.9.12 environment with:
 - FFmpeg with H.264 support
 - Scenario Runner integration
 
+### Building and Deploying the Container
+
+#### Building for AMD64 Linux (from M1 Macs)
+
+```bash
+# Enable Docker Buildx (if not already enabled)
+docker buildx create --use
+
+# Build for AMD64 architecture (required for Linux servers)
+docker buildx build --platform linux/amd64 -t carla-simulation:amd64 -f dockerfile .
+```
+
+#### Tagging and Pushing to DockerHub
+
+```bash
+# Tag the image for DockerHub (replace 'yourusername' with your DockerHub username)
+docker tag carla-simulation:amd64 yourusername/carla-simulation:amd64
+
+# Login to DockerHub
+docker login
+
+# Push to DockerHub
+docker push yourusername/carla-simulation:amd64
+```
+
+#### Pulling with Apptainer/Singularity
+
+```bash
+# Pull from DockerHub and convert to SIF format
+apptainer pull carla-simulation.sif docker://yourusername/carla-simulation:amd64
+
+# Verify the container
+apptainer inspect carla-simulation.sif
+```
 
 ## Output Files
 
